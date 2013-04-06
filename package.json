@@ -1,0 +1,25 @@
+{
+  "name": "trackabout-webhooks",
+  "version": "0.0.1",
+  "dependencies": {
+    "node-hipchat": "0.2.0"
+  },
+  "engines": {
+    "node": "0.10.x",
+    "npm": "1.2.x"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "gitHead": "746fbad99570bd254c3aaa33f00812e46eb4d894",
+  "description": "ERROR: No README.md file found!",
+  "main": "index.js",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "."
+  },
+  "author": "Larry Silverman",
+  "license": "BSD",
+  "readmeFilename": "README.md"
+}
