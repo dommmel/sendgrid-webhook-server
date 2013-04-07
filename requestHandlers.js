@@ -1,6 +1,8 @@
 var url = require('url');
 var hipchat = require('node-hipchat');
+var querystring = require('querystring');
 var client = new hipchat('5fd4363062d8dadf8409ea601ae1b9');
+
 
 function _postMessage(msg) {
   var params = {
@@ -15,26 +17,30 @@ function _postMessage(msg) {
 }
 
 function postSendGridMessage(response, request) {
-  console.log("Request handler 'hookSendGrid' was called.");
-  var queryObject = url.parse(request.url,true).query;
-  if (queryObject.message != null) {
-    console.log (queryObject.message);
-    _postMessage(queryObject.message);
-  }
+  // For POST collection info, see: http://stackoverflow.com/questions/4295782/how-do-you-extract-post-data-in-node-js
+  var queryData = "";
   
-  var body = '<html>'+
-    '<head>'+
-    '<meta http-equiv="Content-Type" '+
-    'content="text/html; charset=UTF-8" />'+
-    '</head>'+
-    '<body>'+
-    'Received call to hookSendGrid.'+
-    '</body>'+
-    '</html>';
+  if (request.method == 'POST') {
+    response.writeHead(200, { "Content-Type": "text/html" });
+    request.on('data', function (data) {
+      queryData += data;
+      if(queryData.length > 1e6) {
+        queryData = "";
+        response.writeHead(413, {'Content-Type': 'text/plain'});
+        request.connection.destroy();
+      }
+    });
 
-    response.writeHead(200, {"Content-Type": "text/html"});
-    response.write(body);
+    request.on('end', function() {
+       response.writeHead(200, {"Content-Type": "text/html"});
+       _postMessage(JSON.stringify(querystring.parse(queryData)));
+       response.end();
+    });
+  } 
+  else {
+    response.writeHead(405, {'Content-Type': 'text/plain'});
     response.end();
+  }
 }
 
 exports.postSendGridMessage = postSendGridMessage;
