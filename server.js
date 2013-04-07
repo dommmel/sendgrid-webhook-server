@@ -7,9 +7,10 @@ function start(route, handle) {
     console.log("Request for " + pathname + " received.");
     route(handle, pathname, response, request);
   }
-
-  http.createServer(onRequest).listen(80);
-  console.log("Server has started.");
+  
+  var port = process.env.PORT || 8888;
+  http.createServer(onRequest).listen(port);
+  console.log("Server has started, listening on port " + port);
 }
 
 exports.start = start;
