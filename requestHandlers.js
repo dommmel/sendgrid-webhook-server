@@ -2,10 +2,10 @@ var url = require('url');
 var hipchat = require('node-hipchat');
 var querystring = require('querystring');
 
-function _postMessage(msg, apikey) {
+function _postMessage(msg, apikey, roomNumber, fromName) {
     var params = {
-        room: '171098',
-        from: 'NodeLarry ',
+        room: roomNumber,
+        from: fromName,
         message: msg,
         message_format: 'html',
         notify: 0,
@@ -19,13 +19,24 @@ function postSendGridMessage(response, request) {
     // For POST collection info, see: http://stackoverflow.com/questions/4295782/how-do-you-extract-post-data-in-node-js
     var queryData = "";
 
-    // Validate that a HipChat API key was provided.
+    
     var url_parts = url.parse(request.url, true);
     var query = url_parts.query;
+
+    // Validate that a HipChat API key was provided.
     if (typeof query.apikey === 'undefined' || !query.apikey)
     {
         response.writeHead(405, { 'Content-Type': 'text/plain' });
         response.write("Invalid HipChat API key.");
+        response.end();
+        return;
+    }
+
+    // Validate that a HipChat room number was provided.
+    if (typeof query.room === 'undefined' || !query.room)
+    {
+        response.writeHead(405, { 'Content-Type': 'text/plain' });
+        response.write("Room number not specified.");
         response.end();
         return;
     }
@@ -43,7 +54,7 @@ function postSendGridMessage(response, request) {
 
         request.on('end', function () {
             response.writeHead(200, { "Content-Type": "text/html" });
-            _postMessage(JSON.stringify(querystring.parse(queryData)), query.apikey);
+            _postMessage(JSON.stringify(querystring.parse(queryData)), query.apikey, query.room, 'SendGrid');
             response.end();
         });
     }
