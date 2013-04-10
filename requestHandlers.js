@@ -51,11 +51,11 @@ function _formatHipChatMessage(evt, userid)
 
 function _getLinks(userid)
 {
-    return '<a href="http://sendgrid.com/subuser/bounces/id/137257">Bounces</a>&nbsp;&nbsp;'
-     + '<a href="http://sendgrid.com/subuser/blocks/id/137257">Blocks</a>&nbsp;&nbsp;'
-     + '<a href="http://sendgrid.com/subuser/spamReports/id/137257">Spam Reports</a>&nbsp;&nbsp;'
-     + '<a href="http://sendgrid.com/subuser/invalidEmail/id/137257">Invalid Emails</a>&nbsp;&nbsp;'
-     + '<a href="http://sendgrid.com/subuser/unsubscribes/id/137257">Unsubscribes</a>'
+    return '<a href="http://sendgrid.com/subuser/bounces/id/' + userid + '">Bounces</a>&nbsp;&nbsp;'
+     + '<a href="http://sendgrid.com/subuser/blocks/id/' + userid + '">Blocks</a>&nbsp;&nbsp;'
+     + '<a href="http://sendgrid.com/subuser/spamReports/id/' + userid + '">Spam Reports</a>&nbsp;&nbsp;'
+     + '<a href="http://sendgrid.com/subuser/invalidEmail/id/' + userid + '">Invalid Emails</a>&nbsp;&nbsp;'
+     + '<a href="http://sendgrid.com/subuser/unsubscribes/id/' + userid + '">Unsubscribes</a>'
 }
 
 function postSendGridMessage(response, request) {
