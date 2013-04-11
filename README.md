@@ -1,1 +1,1 @@
-This is a simple node server designed to accept webhook requests for TrackAbout.
+This is a simple node server designed to accept webhook requests from SendGrid for relaying to a variety of other destinations. Currently, forwards messages to a HipChat room.

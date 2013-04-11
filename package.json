@@ -12,7 +12,7 @@
     "start": "node index.js"
   },
   "gitHead": "746fbad99570bd254c3aaa33f00812e46eb4d894",
-  "description": "ERROR: No README.md file found!",
+  "description": "This is a simple node server designed to accept webhook requests for TrackAbout.",
   "main": "index.js",
   "devDependencies": {},
   "repository": {
