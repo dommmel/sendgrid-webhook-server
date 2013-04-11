@@ -2,6 +2,7 @@ var url = require('url');
 var hipchat = require('node-hipchat');
 var querystring = require('querystring');
 var printf = require('util').format;
+var util = require('util');
 var messageCount = 0;
 var linksEvery = 4;
 
