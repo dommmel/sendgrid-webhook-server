@@ -1,7 +1,7 @@
 var url = require('url');
 var hipchat = require('node-hipchat');
 var querystring = require('querystring');
-
+var printf = require('util').format;
 var messageCount = 0;
 var linksEvery = 4;
 
@@ -18,44 +18,55 @@ function _postMessage(msg, apikey, roomNumber, fromName) {
     client.postMessage(params, function (value) { console.log(value); })
 }
 
-function _formatHipChatMessage(evt, userid)
+function _formatHipChatMessage(evt, environment)
 {
-    var output = 'Email to <strong>' + evt.email + '</strong> was <strong>' + evt.event + '</strong>';
+    var output = printf('Email from <b>%s</b> to <b>%s</b> was <b>%s</b>', environment, evt.email, evt.event);
 
     if (evt.status)
-        output += '<br>Bounce Status: ' + evt.status;
+        output += printf('<br>Bounce Status: %s', evt.status);
 
     if (evt.type)
-        output += '<br>Bounce Type: ' + evt.type;
+        output += printf('<br>Bounce Type: %s', evt.type);
 
     if (evt.reason)
-        output += '<br>Reason: ' + evt.reason;
+        output += printf('<br>Reason: %s', evt.reason);
 
     if (evt.response)
-        output += '<br>Response: ' + evt.response;
+        output += printf('<br>Response: %s', evt.response);
 
     if (evt.url)
-        output += '<br>URL: ' + evt.url;
+        output += printf('<br>URL: %s', evt.url);
 
     if (evt.category)
-        output += '<br>Category: ' + evt.category;
+        output += printf('<br>Category: %s', evt.category);
 
     if (evt.attempt)
-        output += '<br>Attempt: ' + evt.attempt;
+        output += printf('<br>Attempt: %s', evt.attempt);
 
     if (evt["smtp-id"])
-        output += '<br>smtp-id: ' + evt["smtp-id"];
+        output += printf('<br>smtp-id: %s', evt["smtp-id"]);
 
     return output;
 }
 
 function _getLinks(userid)
 {
-    return '<a href="http://sendgrid.com/subuser/bounces/id/' + userid + '">Bounces</a>&nbsp;&nbsp;'
-     + '<a href="http://sendgrid.com/subuser/blocks/id/' + userid + '">Blocks</a>&nbsp;&nbsp;'
-     + '<a href="http://sendgrid.com/subuser/spamReports/id/' + userid + '">Spam Reports</a>&nbsp;&nbsp;'
-     + '<a href="http://sendgrid.com/subuser/invalidEmail/id/' + userid + '">Invalid Emails</a>&nbsp;&nbsp;'
-     + '<a href="http://sendgrid.com/subuser/unsubscribes/id/' + userid + '">Unsubscribes</a>'
+    return printf('<a href="http://sendgrid.com/subuser/emailLogs/id/%s">Email Logs</a>&nbsp;&nbsp;',userid)
+     + printf('<a href="http://sendgrid.com/subuser/bounces/id/%s">Bounces</a>&nbsp;&nbsp;',userid)
+     + printf('<a href="http://sendgrid.com/subuser/blocks/id/%s">Blocks</a>&nbsp;&nbsp;',userid)
+     + printf('<a href="http://sendgrid.com/subuser/spamReports/id/%s">Spam Reports</a>&nbsp;&nbsp;',userid)
+     + printf('<a href="http://sendgrid.com/subuser/invalidEmail/id/%s">Invalid Emails</a>&nbsp;&nbsp;',userid)
+     + printf('<a href="http://sendgrid.com/subuser/unsubscribes/id/%s">Unsubscribes</a>',userid)
+}
+
+function _isInputValid(input, errorMessage, response) {
+    if (typeof input === 'undefined' || !input)
+    {
+        response.writeHead(405, { 'Content-Type': 'text/plain' });
+        response.end(errorMessage);
+        return false;
+    }
+    return true;
 }
 
 function postSendGridMessage(response, request) {
@@ -64,32 +75,15 @@ function postSendGridMessage(response, request) {
     var query = url_parts.query;
 
     // Validate that a HipChat API key was provided.
-    if (typeof query.apikey === 'undefined' || !query.apikey)
-    {
-        response.writeHead(405, { 'Content-Type': 'text/plain' });
-        response.write("Invalid HipChat API key.");
-        response.end();
+    if (!_isInputValid(query.apikey, "HipChat API key not provided.", response))
         return;
-    }
-
-    // Validate that a HipChat room number was provided.
-    if (typeof query.room === 'undefined' || !query.room)
-    {
-        response.writeHead(405, { 'Content-Type': 'text/plain' });
-        response.write("Room number not specified.");
-        response.end();
+    if (!_isInputValid(query.room, "HipChat room number not provided.", response))
         return;
-    }
-
-    // Validate that a Sendgrid user id was provided.
-    if (typeof query.user === 'undefined' || !query.user)
-    {
-        response.writeHead(405, { 'Content-Type': 'text/plain' });
-        response.write("SendGrid User ID not specified.");
-        response.end();
+    if (!_isInputValid(query.user, "SendGrid user not provided.", response))
         return;
-    }
-
+    if (!_isInputValid(query.environment, "SendGrid environment name not provided.", response))
+        return;
+    
     if (request.method == 'POST') {
         response.writeHead(200, { "Content-Type": "text/html" });
         request.on('data', function (data) {
@@ -104,7 +98,7 @@ function postSendGridMessage(response, request) {
         request.on('end', function () {
             response.writeHead(200, { "Content-Type": "text/html" });
             var evt = JSON.parse(queryData);
-            var output = _formatHipChatMessage(evt, query.user);
+            var output = _formatHipChatMessage(evt, query.environment);
 
             _postMessage(output, query.apikey, query.room, 'SendGrid');
 
@@ -129,4 +123,10 @@ function postSendGridMessage(response, request) {
 
 }
 
+function heartbeat(response, request) {
+    response.writeHead(200, { "Content-Type": "text/html" });
+    response.end('0');
+}
+
 exports.postSendGridMessage = postSendGridMessage;
+exports.heartbeat = heartbeat;

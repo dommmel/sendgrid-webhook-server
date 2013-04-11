@@ -4,5 +4,6 @@ var requestHandlers = require("./requestHandlers");
 
 var handle = {}
 handle["/postSendGridMessage"] = requestHandlers.postSendGridMessage;
+handle["/heartbeat"] = requestHandlers.heartbeat;
 
 server.start(router.route, handle);
