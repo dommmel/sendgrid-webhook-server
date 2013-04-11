@@ -21,8 +21,7 @@ function _postMessage(msg, apikey, roomNumber, fromName) {
 
 function _formatHipChatMessage(evt, environment)
 {
-    return util.inspect(evt);
-    /*
+    //return util.inspect(evt);
     var output = printf('Email from <b>%s</b> to <b>%s</b> was <b>%s</b>', environment, evt.email, evt.event);
 
     if (evt.status)
@@ -50,7 +49,6 @@ function _formatHipChatMessage(evt, environment)
         output += printf('<br>smtp-id: %s', evt["smtp-id"]);
 
     return output;
-    */
 }
 
 function _getLinks(userid)
@@ -101,7 +99,7 @@ function postSendGridMessage(response, request) {
 
         request.on('end', function () {
             response.writeHead(200, { "Content-Type": "text/html" });
-            var evt = JSON.parse(queryData);
+            var evt = querystring.parse(queryData);
             var output = _formatHipChatMessage(evt, query.environment);
 
             _postMessage(output, query.apikey, query.room, 'SendGrid');
