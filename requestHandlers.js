@@ -45,7 +45,7 @@ function _formatHipChatMessage(evt, environment)
     if (evt.attempt)
         output += printf('<br>Attempt: %s', evt.attempt);
 
-    if (evt["smtp-id"])
+    if (evt["smtp-id"] && evt["smtp-id"].length > 0)
         output += printf('<br>smtp-id: %s', evt["smtp-id"]);
 
     return output;
