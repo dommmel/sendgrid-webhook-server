@@ -3,6 +3,9 @@ var hipchat = require('node-hipchat');
 var querystring = require('querystring');
 var printf = require('util').format;
 var util = require('util');
+var Encoder = require('node-html-encoder').Encoder;
+// entity type encoder
+var encoder = new Encoder('entity');
 var messageCount = 0;
 var linksEvery = 4;
 
@@ -48,7 +51,7 @@ function _formatHipChatMessage(eventData, environment) {
     // Can't access it like a regular object property because javascript interprets the dash as a minus sign.
     // Additionally, this field has been proven to often include encoded < and > signs
     if ("smtp-id" in eventData && eventData["smtp-id"].length > 0)
-        output += printf('<br>smtp-id: %s', decodeURIComponent(eventData["smtp-id"]));
+        output += printf('<br>smtp-id: %s', encoder.htmlEncode(eventData["smtp-id"]));
 
     return output;
 }
