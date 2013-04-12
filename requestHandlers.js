@@ -20,8 +20,7 @@ function _postMessage(msg, apikey, roomNumber, fromName) {
 }
 
 function _formatHipChatMessage(eventData, environment) {
-    // Uncomment here to just dump 
-    //return util.inspect(eventData);
+    // To just dump what was posted, converted to JSON format, return util.inspect(eventData);
     var output = printf('Email from <b>%s</b> to <b>%s</b> was <b>%s</b>', environment, eventData.email, eventData.event);
 
     if (eventData.status)
@@ -45,7 +44,7 @@ function _formatHipChatMessage(eventData, environment) {
     if (eventData.attempt)
         output += printf('<br>Attempt: %s', eventData.attempt);
 
-    // This smtp-id needs to be handled specially because of the dash.
+    // This smtp-id needs to be handled differently because of the dash.
     // Can't access it like a regular object property because javascript interprets the dash as a minus sign.
     if ("smtp-id" in eventData && eventData["smtp-id"].length > 0)
         output += printf('<br>smtp-id: %s', eventData["smtp-id"]);
@@ -54,12 +53,18 @@ function _formatHipChatMessage(eventData, environment) {
 }
 
 function _getLinks(userid) {
+    // These links will only work for a user who is logged into the master account of a SendGrid account.
+    // If a user is logged into a sub-account, the links that would work are different.
+    // For example, the link to bounces would be simply http://sendgrid.com/bounces
+    // Furthermore, we're writing the links using the passed-in user id from the last webhook call.
+    // So the links really only work for whatever account caused that webhook call.
     return printf('<a href="http://sendgrid.com/subuser/emailLogs/id/%s">Email Logs</a>&nbsp;&nbsp;', userid)
      + printf('<a href="http://sendgrid.com/subuser/bounces/id/%s">Bounces</a>&nbsp;&nbsp;', userid)
      + printf('<a href="http://sendgrid.com/subuser/blocks/id/%s">Blocks</a>&nbsp;&nbsp;', userid)
      + printf('<a href="http://sendgrid.com/subuser/spamReports/id/%s">Spam Reports</a>&nbsp;&nbsp;', userid)
      + printf('<a href="http://sendgrid.com/subuser/invalidEmail/id/%s">Invalid Emails</a>&nbsp;&nbsp;', userid)
      + printf('<a href="http://sendgrid.com/subuser/unsubscribes/id/%s">Unsubscribes</a>', userid)
+     + ' <i>These links only work if you are logged into the master sendgrid account.</i>'
 }
 
 function _isInputValid(input, errorMessage, response) {
@@ -70,7 +75,6 @@ function _isInputValid(input, errorMessage, response) {
     }
     return true;
 }
-
 
 /**
  * Call this endpoint from a SendGrid webhook.
@@ -95,39 +99,47 @@ function postSendGridMessage(response, request) {
     if (!_isInputValid(query.environment, "SendGrid environment name not provided.", response))
         return;
 
-    if (request.method == 'POST') {
-        response.writeHead(200, { "Content-Type": "text/html" });
-        request.on('data', function (data) {
-            rawPostData += data;
-            if (rawPostData.length > 1e6) {
-                rawPostData = "";
-                response.writeHead(413, { 'Content-Type': 'text/plain' });
-                request.connection.destroy();
-            }
-        });
-
-        request.on('end', function () {
-            response.writeHead(200, { "Content-Type": "text/html" });
-            console.log(rawPostData);
-            var eventData = querystring.parse(rawPostData);
-            var output = _formatHipChatMessage(eventData, query.environment);
-
-            _postMessage(output, query.apikey, query.room, 'SendGrid');
-
-            // Every so many messages, inject links back to SendGrid report pages.
-            if (messageCount === 0)
-                _postMessage(_getLinks(query.user), query.apikey, query.room, 'SendGrid');
-            if (messageCount++ === linksEvery)
-                messageCount = 0;
-
-            response.end();
-        });
-    }
-    else {
+    // Ignore everything but POST.
+    if (request.method != 'POST') {
         response.writeHead(405, { 'Content-Type': 'text/plain' });
         response.end();
     }
 
+    request.on('data', function (data) {
+        rawPostData += data;
+        if (rawPostData.length > 1e6) {
+            rawPostData = "";
+            response.writeHead(413, { 'Content-Type': 'text/plain' });
+            request.connection.destroy();
+        }
+    });
+
+    request.on('end', function () {
+        response.writeHead(200, { "Content-Type": "text/html" });
+        response.end();
+
+        console.log('POST: ' + rawPostData);
+
+        // SendGrid can send two kinds of POSTs to the webhook endpoint.
+        // It can send a single line of form-encoded data, 
+        // or it can do batch mode, sending multiple lines of JSON-formatted data, one complete JSON object per line.
+        // In this second batch mode, it's not actually sending a single JSON object, but one JSON object per line.
+        // Here we're only handling the first case, a single line of form-encoded data.
+        // TODO: Figure out how to deal with multi-line strings in javascript,
+        //  detect that the POST came in with content-type application/json,
+        //  and deal with multiple JSON objects in batch mode.
+
+        // Convert the POST name/value pairs into a javascript object.
+        var eventData = querystring.parse(rawPostData);
+        var output = _formatHipChatMessage(eventData, query.environment);
+        _postMessage(output, query.apikey, query.room, 'SendGrid');
+
+        // Every so often, inject links to the SendGrid report pages.
+        if (messageCount === 0)
+            _postMessage(_getLinks(query.user), query.apikey, query.room, 'SendGrid');
+        if (messageCount++ === linksEvery)
+            messageCount = 0;
+    });
 }
 /**
  * A url to query to let us know the service is still running.
