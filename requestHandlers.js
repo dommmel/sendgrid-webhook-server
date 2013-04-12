@@ -46,8 +46,9 @@ function _formatHipChatMessage(eventData, environment) {
 
     // This smtp-id needs to be handled differently because of the dash.
     // Can't access it like a regular object property because javascript interprets the dash as a minus sign.
+    // Additionally, this field has been proven to often include encoded < and > signs
     if ("smtp-id" in eventData && eventData["smtp-id"].length > 0)
-        output += printf('<br>smtp-id: %s', eventData["smtp-id"]);
+        output += printf('<br>smtp-id: %s', decodeURIComponent(eventData["smtp-id"]));
 
     return output;
 }
