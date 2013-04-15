@@ -22,6 +22,6 @@ app.post('/postSendGridMessage', function (req, res) {
 });
 
 var port = process.env.PORT || 8888;
-app.listen(8888);
+app.listen(port);
 console.log("Server has started, listening on port " + port);
 
