@@ -4,14 +4,15 @@
   "dependencies": {
     "node-hipchat": "0.2.0",
     "node-html-encoder":"0.0.2",
-	"express":"3.1.2"
+	"express":"3.1.2",
+	"express-validator":"0.3.2"
   },
   "engines": {
     "node": "0.10.4",
     "npm": "1.2.18"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node app.js"
   },
   "gitHead": "746fbad99570bd254c3aaa33f00812e46eb4d894",
   "description": "This is a simple node server designed to accept webhook requests for TrackAbout.",
