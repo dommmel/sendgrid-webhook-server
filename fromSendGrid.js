@@ -1,12 +1,4 @@
-﻿/* Where I left off...
- Just figured out that bodyParse is parsing the FORM elements, 
- whereas previously I was converting them to an object from the raw 
- form data.
- So I need to probably pass around req instead of my eventData object
- and start using req.body to access the form elements.
-*/
-
-/* jslint node: true */
+﻿/* jslint node: true */
 "use strict";
 
 var hipchat = require('node-hipchat'),
