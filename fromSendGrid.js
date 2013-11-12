@@ -21,19 +21,22 @@ function postMessage(msg, context) {
     client.postMessage(params, function (value) { console.log(value); });
 }
 
-function formatHipChatMessage(eventData, context) {
-    var output = printf('Email from <b>%s</b> to <b>%s</b> was <b>%s</b>',
-        context.sendgridEnvironment, eventData.email, eventData.event),
-        key = "";
-    for (key in eventData) {
-        if (eventData.hasOwnProperty(key)) {
-            output += printf('<br>%s: %s', key, encoder.htmlEncode(eventData[key]));
+function formatHipChatMessage(eventArray, context) {
+    console.log(eventArray);
+    console.log(context);
+    var output = "";
+    for (var i = 0; i < eventArray.length; i++) {
+        var eventData = eventArray[i];
+        output += printf('Email from <b>%s</b> to <b>%s</b> was <b>%s</b>', context.sendgridEnvironment, eventData.email, eventData.event);
+        if (eventData.reason) {
+            output +=printf('. Reason: %s', eventData.reason);
         }
+        output += "<br/>";
     }
     return output;
 }
 
-function getLinks(userid) {
+function getLinks() {
     // These links will only work for a user who is 
     // logged into the master account of a SendGrid account.
     // If a user is logged into a sub-account, 
@@ -44,13 +47,13 @@ function getLinks(userid) {
     // passed-in user id from the last webhook call.
     // So the links really only work for whatever account 
     // caused that webhook call.
-    return printf('<a href="http://sendgrid.com/subuser/emailLogs/id/%s">Email Logs</a>&nbsp;&nbsp;', userid)
-        + printf('<a href="http://sendgrid.com/subuser/bounces/id/%s">Bounces</a>&nbsp;&nbsp;', userid)
-        + printf('<a href="http://sendgrid.com/subuser/blocks/id/%s">Blocks</a>&nbsp;&nbsp;', userid)
-        + printf('<a href="http://sendgrid.com/subuser/spamReports/id/%s">Spam Reports</a>&nbsp;&nbsp;', userid)
-        + printf('<a href="http://sendgrid.com/subuser/invalidEmail/id/%s">Invalid Emails</a>&nbsp;&nbsp;', userid)
-        + printf('<a href="http://sendgrid.com/subuser/unsubscribes/id/%s">Unsubscribes</a>', userid)
-        + '<br /><i>These links only work if you are logged into the master sendgrid account.</i>';
+    return printf('<a href="http://sendgrid.com/logs">Email Logs</a>&nbsp;&nbsp;')
+        + printf('<a href="http://sendgrid.com/bounces">Bounces</a>&nbsp;&nbsp;')
+        + printf('<a href="http://sendgrid.com/blocks">Blocks</a>&nbsp;&nbsp;')
+        + printf('<a href="http://sendgrid.com/spamReports">Spam Reports</a>&nbsp;&nbsp;')
+        + printf('<a href="http://sendgrid.com/invalidEmail">Invalid Emails</a>&nbsp;&nbsp;')
+        + printf('<a href="http://sendgrid.com/unsubscribes">Unsubscribes</a>')
+        + '<br /><i>These links only work if you are logged into the sendgrid account through heroku.</i>';
 }
 
 /**
@@ -58,13 +61,11 @@ function getLinks(userid) {
  * Expects the following querystring parameters:
  * apikey - HipChat API Key
  * room - HipChat room number (can be fetched from viewing the chat history of any room)
- * user - SendGrid UserId (if using sub-accounts, which we are). This is used to make links back to SendGrid reports.
  * environment - This is an arbitrary string, can contain whatever you want. If you use subusers, you can use this to distinguish which one is calling the webhook.
  */
 function postToHipChat(res, req) {
     req.assert('apikey', 'HipChat API key not provided.').notEmpty();
     req.assert('room', 'HipChat room number not provided.').notEmpty();
-    req.assert('user', 'SendGrid user not provided.').notEmpty().isInt();
     req.assert('environment', 'SendGrid environment name not provided.').notEmpty();
     var errors = req.validationErrors();
     if (errors) {
@@ -84,7 +85,6 @@ function postToHipChat(res, req) {
         "hipchatApiKey": req.query.apikey,
         "hipchatRoom": req.query.room,
         "hipchatFrom": 'SendGrid',
-        "sendgridUserId": req.query.user,
         "sendgridEnvironment": req.query.environment
     },
         eventData = req.body,
@@ -96,7 +96,7 @@ function postToHipChat(res, req) {
 
     // Every so often, inject links to the SendGrid report pages.
     if (messageCount === 0 || messageCount % linksEvery === 0) {
-        postMessage(getLinks(context.sendgridUserId), context);
+        postMessage(getLinks(), context);
         messageCount = 0;
     }
     messageCount += 1;
